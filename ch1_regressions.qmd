@@ -1,0 +1,186 @@
+---
+title: "Heriarchical Statistics Notes"
+format: html
+editor: visual
+---
+
+Notes from first class - 24 Jan 25 Ch. 1 regressions https://statistics4ecologists-v3.netlify.app/01-linearregression
+
+```{r}
+library(abd)
+lm.nose <- lm(age ~ proportion.black, data = LionNoses)
+
+summary(lm.nose)
+```
+
+Why simulate data? our whole concept of data is that its generated from a stochastic process - it allows us to ask how methods perform across a distribution of data
+
+We can simulate a lot of data and then run the same lm and look at the outputs in comparison to the actual data we recorded 
+
+
+```{r}
+#simulating data
+
+#simulating 32 observations in the dataset
+n <- 32 
+
+# Use the observed proportion.black in the data when simulating new observations 
+p.black <- LionNoses$proportion.black 
+
+# True regression parameters
+sigma <- 1.67 # residual variation about the line (this comes from the "Residual standard error term - 3rd line from the bottom (use this for the sd term))
+betas <- c(0.88, 10.65) # Regression coefficients - first is the intercept estimate and the second is the slope 
+
+# Create random errors (epsilons) and random responses
+epsilon <- rnorm(n, 0, sigma) # Errors
+y <- betas[1] + p.black*betas[2] + epsilon # Response
+
+
+lm.sim1 <- lm(y ~ p.black)
+summary(lm.sim1)
+```
+
+
+
+```{r}
+#simulating 1000 observations in the dataset
+
+m <- 1000
+
+est_slope <- numeric(m)
+est_intercepts <- numeric(m)
+
+
+
+for(i in 1:m) {
+  y_mean <- 0.879 + 10.6471*LionNoses$proportion.black
+  eps <- rnorm(length(y_mean), 0,
+               sd = 1.669)
+  y_sim <- y_mean + eps
+  fit <- lm(y_sim ~ proportion.black, data = LionNoses)
+  est_slopes[i] <- coef(fit)[2]
+}
+
+
+hist(est_slopes)
+
+
+for(i in 1:m) {
+  y_mean <- 0.879 + 10.6471*LionNoses$proportion.black
+  eps <- rnorm(length(y_mean), 0,
+               sd = 1.669)
+  y_sim <- y_mean + eps
+  fit <- lm(y_sim ~ proportion.black, data = LionNoses)
+  est_slopes[i] <- coef(fit)[2]
+  est_intercepts[i] <- coef(fit)[1]
+}
+
+plot(est_intercepts, est_slopes)
+
+fit
+
+names(fit)
+
+
+ls(fit)
+
+fit$coefficients
+
+summary(fit)
+
+
+class(summary(fit))
+
+summary(fit)$coefficient
+summary(fit)$coefficient['proportion.black','Std. Error']
+```
+
+
+sampling distribution is the distribution of parameter estimates across multiple samples of data
+
+
+The correct parameters will be in the middle of the histogram and as well as the points (estimate of intercept plotted against estimate of slope). 
+
+
+The probability of getting the value 
+
+standard error is the standard deviation of the sampling distribution 
+to find the true standard error you can increase the number of simulations 
+
+
+p value is how probable that null hypothesis (slope is 0) is true or at least as extreme
+p values are helpful if we are skeptical about the conclusion. if we say 0 is the truth than the data we got is ridiculously rare 
+
+100% power is completely rejecting the null hypothesis 
+
+puzzle in class - what if we record the p values but the slope is set to 0 aka the null hypothesis is true?
+the distribution of p values is uniform - every p value is equally probable 
+
+for all the p-values that are less than .05, you're going to reject the null hypothesis. if most of the values are less than .05 you're more likely to reject the null hypothesis. distribution of p values moves to more small values and fewer big values as you have a slope that is further from 0. As the true slope increases, we're going to be more and more likely to reject the null
+
+
+
+
+if you plot true slopes by power, you'll see the probability that you'll reject the null hypothesis at a given slope 
+power is rejecting the null if the null is false
+type 1 error - if the null is true and we reject it
+type 2 error - if the null is false and we reject it 
+
+power is 1 minus the type 2 error rate
+
+power also increases with increases with more data (bigger sample size) or less noisy data/smaller residuals 
+
+
+t value is the slope divided by the estimated standard error of the slope - why do we actually use the t value? 
+
+```{r}
+#when we set the slope to 0 we are testing the null hypothesis 
+
+m <- 1000
+
+est_slope <- numeric(m)
+est_intercepts <- numeric(m)
+true_slopes < - c(0, 0.5, 1, 1.5, 2, 2.5, 3)
+k <- length(true_slopes)
+power <- numeric(k)
+
+
+for(j in 1:k) {
+  slope <- true_slopes[j]
+for(i in 1:m) {
+  y_mean <- 0.879 + 1.5*LionNoses$proportion.black
+  eps <- rnorm(length(y_mean), 0,
+               sd = 1.669)
+  y_sim <- y_mean + eps
+  fit <- lm(y_sim ~ proportion.black, data = LionNoses)
+  est_slopes[i] <- coef(fit)[2]
+  p_values[i] <-
+  summary(fit)$coefficient['proportion.black','Pr(>|t|)']
+}
+power[j] <- sum(p_values <= 0.05)/m
+}
+
+
+
+hist(est_slopes)
+```
+
+```{r}
+
+est_slope <- numeric(m)
+est_intercepts <- numeric(m)
+p_value <- numeric(m)
+
+
+for(i in 1:m) {
+  y_mean <- 0.879 + 1*LionNoses$proportion.black
+  eps <- rnorm(length(y_mean), 0,
+               sd = 1.669)
+  y_sim <- y_mean + eps
+  fit <- lm(y_sim ~ proportion.black, data = LionNoses)
+  est_slopes[i] <- coef(fit)[2]
+}
+
+hist(est_slopes)
+```
+
