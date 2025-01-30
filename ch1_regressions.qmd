@@ -102,7 +102,6 @@ sampling distribution is the distribution of parameter estimates across multiple
 The correct parameters will be in the middle of the histogram and as well as the points (estimate of intercept plotted against estimate of slope). 
 
 
-The probability of getting the value 
 
 standard error is the standard deviation of the sampling distribution 
 to find the true standard error you can increase the number of simulations 

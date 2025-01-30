@@ -1,0 +1,39 @@
+---
+title: "Review with Jashvina"
+format: html
+editor: visual
+---
+
+# Major concepts from first class:
+
+## simulating data
+
+we simulate so we can compare the linear regression values from our data with random simulated data to determine the likelihood of our data
+
+## sampling distribution
+
+sampling distribution is the distribution of parameter estimates across multiple samples of data
+
+The correct parameters will be in the middle of the histogram and as well as the points when the estimate of intercept is plotted against estimate of slope.
+
+## sampling error
+
+standard error is the standard deviation of the sampling distribution to find the true standard error you can increase the number of simulations
+
+## p-value
+
+is how probable that null hypothesis (slope is 0) is true or at least as extreme p values are helpful if we are skeptical about the conclusion
+
+## intercept
+
+the average value of Y when all predictors are set equal to 0
+
+## slope
+
+predicted change in Y per unit increase in X
+
+# Questions:
+
+In class perry said "simulating data allows us to ask how methods perform across a distribution of data" - what does this mean? arent we looking at how our data perform across a distribution?
+
+how do you know when to use linear regressions? - normally distributed responses (also when looking at just two variables?)
