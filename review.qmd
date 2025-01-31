@@ -36,4 +36,4 @@ predicted change in Y per unit increase in X
 
 In class perry said "simulating data allows us to ask how methods perform across a distribution of data" - what does this mean? arent we looking at how our data perform across a distribution?
 
-how do you know when to use linear regressions? - normally distributed responses (also when looking at just two variables?)
+how do you know when to use linear regressions? - (also when looking at just two variables?) residuals normally distributed
