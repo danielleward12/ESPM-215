@@ -1,0 +1,20 @@
+---
+title: "Untitled"
+format: html
+editor: visual
+---
+
+assumptions need to met for the linear regression
+
+least squares regression is used to estimate parameters
+
+estimation and inference
+
+estimation is how we'll get estimates of the parameters of the model
+(parametric statistics vs. non parametric statistics)
+
+vs. inference
+saying what we believe about hypotheses that relate to the parameters
+(things related to probability and uncertainty)
+
+
