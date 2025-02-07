@@ -1,5 +1,5 @@
 ---
-title: "Heriarchical Statistics Notes class 2"
+title: "Heriarchical Statistics Notes class 2 and 3"
 format: html
 editor: visual
 ---
@@ -16,5 +16,7 @@ estimation is how we'll get estimates of the parameters of the model
 vs. inference
 saying what we believe about hypotheses that relate to the parameters
 (things related to probability and uncertainty)
+
+
 
 
