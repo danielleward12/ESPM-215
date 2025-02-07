@@ -1,0 +1,309 @@
+---
+title: "ESPM 215 S25 Day 2 -- bootstrapping and multivariate regression"
+author: "Perry de Valpine"
+date: "2025-01-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(Data4Ecologists)
+# If you need the library, do:
+# devtools::install_github("jfieberg/Data4Ecologists")
+# If that doesn't work, do 
+# install("devtools") and try again
+library(ggplot2)
+library(tidyverse)
+library(plotly)
+library(ggthemes)
+```
+
+# Fieberg chapter 2
+
+### Bootstrap for lion nose regression
+
+- Data violate assumptions of linear regression, so we can't trust the uncertainties (such as standard errors, confidence intervals) and results that depend on them (such as p-values).
+
+- We want to approximate the sampling distribution of parameter estimates by simulation. But what to simulate?
+
+- Our best information about the data distribution is the data set itself. We will simulate hypothetical data sets by sampling from the real data **with replacement**.
+
+#### Walk through code from Fieberg.
+
+```{r}
+set.seed(08182007)
+library(abd)
+data("LionNoses")
+nboot <- 10000 # number of bootstrap samples
+nobs <- nrow(LionNoses)
+bootcoefs <- matrix(NA, nboot, 2)
+for(i in 1:nboot){
+  # Create bootstrap data set by sampling original observations w/ replacement  
+  bootdat <- LionNoses[sample(1:nobs, nobs, replace=TRUE),] 
+  # Calculate bootstrap statistic
+  lmboot <- lm(age ~ proportion.black, data = bootdat)
+  bootcoefs[i,] <- coef(lmboot)
+}
+{
+  par(mfrow = c(1, 2))
+  hist(bootcoefs[,1], 
+       main = expression(paste("Bootstrap distribution of ", hat(beta)[0])), 
+       xlab = expression(hat(beta)[0]))
+  hist(bootcoefs[,2], 
+       main = expression(paste("Bootstrap distribution of ", hat(beta)[1])), 
+       xlab = expression(hat(beta)[1]))
+}
+```
+
+#### Several ways to estimate confidence intervals
+
+```{r}
+# Fit the model to the original data to get our estimates
+lmnoses <- lm(age ~ proportion.black, data = LionNoses)
+
+# Calculate bootstrap standard errors
+se<-apply(bootcoefs, 2, sd)
+
+# Confidence intervals 
+# t-based
+confdat.t <- confint(lmnoses)
+# bootstrap normal
+confdat.boot.norm <- rbind(c(coef(lmnoses)[1] - 1.96*se[1], coef(lmnoses)[1] + 1.96*se[1]),
+                           c(coef(lmnoses)[2] - 1.96*se[2], coef(lmnoses)[2] + 1.96*se[2]))
+# bootstrap percentile
+confdat.boot.pct <- rbind(quantile(bootcoefs[,1], probs = c(0.025, 0.975)),
+                          quantile(bootcoefs[,2], probs = c(0.025, 0.975)))
+
+# combine and plot
+confdats <- rbind(confdat.t, confdat.boot.norm, confdat.boot.pct)
+confdata <- data.frame(LCL = confdats[,1], 
+                       UCL = confdats[,2], 
+                       method = rep(c("t-based", "bootstrap-Normal", "bootstrap-percentile"), 
+                                    each=2),
+                       parameter = rep(c("Intercept", "Slope"), 3))
+confdata$estimate <- rep(coef(lmnoses),3)
+ggplot(confdata, aes(y = estimate, x = " ", col = method)) + 
+  geom_point() +
+  geom_pointrange(aes(ymin = LCL, ymax = UCL),  position = position_dodge(width = 0.9)) +
+  facet_wrap(~parameter, scales="free") +xlab("")
+```
+
+#### Skip the rest.
+
+Key point: The bootstrap is useful in two situations:
+
+- You think a method to estimate parameters is reasonable but the assumptions on which inference (standard errors, confidence intervals, p-values, etc) is based are dubious.
+- You are estimating a quantity for which more direct ways to obtain uncertainties are not available.
+
+The bootstrap can also be used to estimate the *bias* of an estimator. (An *estimator* is the procedure for making parameter estimates, such as least squares or maximum likelihood.)
+
+#### Additional points (not covered by Fieberg)
+
+- Sometimes, instead of resampling the data, you simulate from an estimated model. This is a **parametric** bootstrap (because it relies on estimated parameters).
+
+- The uncertainty of a sampling distribution may depend on unknown parameters.
+
+- Why do we regularly use the t-distribution instead of a normal distribution for inference about a coefficient (slope)?
+
+# Multivariate regression
+
+### Set up the RIKZ example
+```{r}
+data(RIKZdat)
+RIKZdat
+class(RIKZdat$Beach)
+RIKZdat$Beach <- as.factor(RIKZdat$Beach)
+class(RIKZdat$Beach)
+```
+
+```{r}
+ggplot(RIKZdat, aes(NAP, Richness)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = y ~ x,  se = FALSE) + xlab("NAP") +
+  ylab("Richness")
+```
+
+## Matrix notation:
+
+- See Fieberg for nice layout.
+
+## Fit two models
+
+```{r}
+library(Data4Ecologists) 
+data(RIKZdat)
+lmfit1 <- lm(Richness ~ NAP, data = RIKZdat)
+lmfit2 <- lm(Richness ~ NAP + humus, data = RIKZdat)
+```
+
+See the model matrix:
+
+```{r}
+model.matrix(lmfit2)
+coef(lmfit2)
+model.matrix(lmfit2) %*% coef(lmfit2)
+fitted(lmfit2) # the same numbers
+```
+
+Go over different sums of squares. See drawings.
+
+```{r}
+summary(lmfit2)
+fitted <- fitted(lmfit2)
+mean_richness <- mean(RIKZdat$Richness)
+SST <- sum((RIKZdat$Richness - mean_richness)^2)
+dfT <- nrow(RIKZdat) - 1
+SSE <- sum((RIKZdat$Richness - fitted)^2)
+dfE <- nrow(RIKZdat) - 3
+SSR <- sum((fitted - mean_richness)^2)
+dfR <- 2
+```
+
+SST = SSE + SSR (not obvious!)
+
+```{r}
+# notice:
+SST
+SSE + SSR 
+```
+
+dfT = dfE + dfR
+
+```{r}
+dfT
+dfE+dfR
+```
+
+F ratio (test statistic)
+
+```{r}
+F <- (SSR / dfR) / (SSE / dfE)
+F
+1-pf(F, dfR, dfE)
+```
+
+## Interactive 3D plot
+
+(Code is not shown by Fieberg, so I set it up. He may have used package `car`, which uses package `rgl`.)
+
+```{r}
+fig <- plot_ly(RIKZdat, x = ~NAP, y = ~humus, z = ~Richness) |> add_markers()
+fig
+NAP_grid <- with(RIKZdat, seq(min(NAP), max(NAP), length = 11))
+humus_grid <- with(RIKZdat, seq(min(humus), max(humus), length=11))
+xygrid <- with(RIKZdat, expand.grid(NAP_grid, humus_grid))
+colnames(xygrid) <- c("NAP", "humus")
+xygrid
+predicted <- matrix(predict(lmfit2, newdata = xygrid),nrow = 11, byrow=TRUE)
+fig |> add_surface(x = ~NAP_grid, y = ~humus_grid, z = ~predicted)
+```
+
+### Walk through the different tests shown in the `summary` output.
+
+## Categorical predictors: ANOVA and regression are the same thing.
+
+### jackal mandible lengths (from Fieberg)
+
+```{r}
+males<-c(120, 107, 110, 116, 114, 111, 113, 117, 114, 112)
+females<-c(110, 111, 107, 108, 110, 105, 107, 106, 111, 111)
+```
+
+Basic t-test
+
+```{r}
+t.test(males, females, var.equal = T) # basic two-sample t-test
+mean(males) - mean(females)
+```
+
+Regression will give equivalent results (a bit different from Fieberg)
+
+```{r}
+jawdat1 <- data.frame(jaws = c(males, females),
+                      x = c(rep(0,10), rep(1, 10)))
+
+summary(lm(jaws ~ x, data = jawdat1))
+```
+
+We'll get the same inference for any choices of `x`.
+
+```{r}
+jawdat2 <- data.frame(jaws = c(males, females),
+                      x = c(rep(-1,10), rep(3, 10)))
+
+summary(lm(jaws ~ x, data = jawdat2))
+```
+
+R does this automatically:
+
+```{r}
+jawdat <- data.frame(jaws = c(males, females),
+                     sex = c(rep("M",10), rep("F", 10)))
+head(jawdat)
+```
+
+```{r}
+lm.jaw<-lm(jaws ~ sex, data = jawdat)
+summary(lm.jaw)
+anova(lm.jaw)
+```
+
+We can look at the X matrix set up by R with *dummy* variables:
+
+```{r}
+model.matrix(lm.jaw)
+```
+
+There are alternative ways to set up the model matrix with dummy variables. The default is called "treatment contrasts." Here is the "cell means" version.
+
+```{r}
+lm.jaws.means <- lm(jaws ~ sex - 1, data = jawdat)
+summary(lm.jaws.means)
+```
+
+## ANOVA with more than two categories
+
+- Consider `week` as a category (factor) with four values (levels).
+
+We'll see tidyverse code here.
+```{r}
+RIKZdat <- RIKZdat |> mutate(week.cat = as.factor(week))
+```
+
+I want to look *only* at week (Fieberg includes NAP)
+
+```{r}
+lm_week <- lm(Richness ~ week.cat, data = RIKZdat)
+summary(lm_week)
+model.matrix(lm_week)
+anova(lm_week)
+```
+
+Discuss what is happening.
+
+We can combine continuous and categorical explanatory variables
+
+```{r}
+lm.ancova <- lm(Richness ~ NAP + week.cat, data = RIKZdat)
+summary(lm.ancova)
+model.matrix(lm.ancova)
+```
+
+Plot the model and data.
+
+```{r}
+RIKZdat <- RIKZdat %>% mutate(p.ancova = predict(lm.ancova))
+                        
+# plot using ggplot
+ggplot(data = RIKZdat,
+      aes(x = NAP, y = Richness, color = week.cat)) +
+      geom_point() + geom_line(aes(y = p.ancova)) +
+      scale_colour_colorblind()
+```
+
+Discussion points:
+
+- Collinearity
+- Interactions
+- F tests for arbitrary subsets of parameters = 0.
+- What are degrees of freedom and why does SST = SSE + SSR?
