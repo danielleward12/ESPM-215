@@ -17,6 +17,6 @@ vs. inference
 saying what we believe about hypotheses that relate to the parameters
 (things related to probability and uncertainty)
 
-# Week 3 notes
+
 
 
