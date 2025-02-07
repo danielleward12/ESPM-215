@@ -1,0 +1,200 @@
+---
+title: "ESPM 215 Spring 2025 Week 3 (multiple regression)"
+author: "Perry de Valpine"
+date: "2025-02-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(car)
+```
+
+Today's document does not follow Fieberg in full detail. Instead it has skeletons for simulation exercises.
+
+Here are some comments:
+
+- Fieberg seems to assume some understanding of variance-covariance (also simply called "covariance") matrices. We will start building that up as time allows.
+- We won't spend time today on multiple testing or testing combinations of parameters (but these are important topics).
+- Fieberg throws some linear algebra down for F tests and Wald tests with little explanation. We'll put a pin in those for later.
+
+# Understanding interactions
+
+## Interactions between two factors
+
+### Two factors each with two levels
+
+```{r}
+fruit <- c("apple", "orange")
+idioma <- c("english", "spanish")
+fruit_params <- c(apple = 2, orange = 2)
+idioma_params <- c(english = 1, spanish = 5)
+interaction_params <- matrix(c(0, 0,
+                               0, 3), nrow = 2, byrow = TRUE)
+rownames(interaction_params) <- fruit 
+colnames(interaction_params) <- idioma
+interaction_params
+n_per_group <- 8
+data <- expand.grid(fruit = fruit, idioma = idioma)
+data <- data[rep(1:nrow(data), n_per_group),]
+data$y <- numeric(nrow(data))
+```
+
+
+```{r}
+sigma <- 2
+set.seed(100)
+for(i in 1:nrow(data)) {
+  data$y[i] <- fruit_params[data$fruit[i]] + idioma_params[data$idioma[i]] + 
+    interaction_params[data$fruit[i], data$idioma[i]] + rnorm(1, 0, sigma)
+}
+data
+```
+
+```{r}
+fit <- lm(y ~ fruit * idioma, data = data)
+model.matrix(fit)
+summary(fit)
+anova(fit)
+car::Anova(fit)
+```
+
+- Can you make sense of the model matrix? 
+- What is being tested by anova? 
+- Let's manually set up some nested models.
+- Whats up with R's base `anova` vs `car::Anova`?
+- Let's try some different parameter choices.
+
+### Three factors each with three levels
+
+```{r}
+fruit <- c("apple", "orange", "banana")
+idioma <- c("english", "spanish", "mandarin")
+fruit_params <- c(apple = 1, orange = 5, banana = 4)
+idioma_params <- c(english = 1, spanish = 3, mandarin = 2)
+interaction_params <- matrix(c(0, 0, 0,
+                               0, 3, -1,
+                               0, 2, 1), nrow = 3, byrow=TRUE)
+rownames(interaction_params) <- fruit 
+colnames(interaction_params) <- idioma
+interaction_params
+n_per_group <- 8
+data <- expand.grid(fruit = fruit, idioma = idioma)
+data <- data[rep(1:nrow(data), n_per_group),]
+data$y <- numeric(nrow(data))
+```
+
+```{r}
+set.seed(101)
+sigma <- 2
+for(i in 1:nrow(data)) {
+  data$y[i] <- fruit_params[data$fruit[i]] + idioma_params[data$idioma[i]] + 
+    interaction_params[data$fruit[i], data$idioma[i]] + rnorm(1, 0, sigma)
+}
+data
+```
+
+```{r}
+fit <- lm(y ~ fruit * idioma, data = data)
+model.matrix(fit)
+summary(fit)
+anova(fit)
+car::Anova(fit)
+```
+
+- We have some topics to return to.
+
+## Interactions between continuous and factor variables
+
+### Case with two levels
+
+```{r}
+set.seed(102)
+fruit <- c("apple", "orange")
+fruit_intercepts <- c(apple = 2, orange = 2)
+fruit_slopes <- c(apple = .5, orange = .9)
+n_per_group <- 8
+X <- runif(n = n_per_group * length(fruit), 1, 3)
+data <- data.frame(X = X, fruit = rep(fruit, n_per_group))
+data$y <- numeric(nrow(data))
+```
+
+```{r}
+sigma <- 2
+for(i in 1:nrow(data)) {
+  data$y[i] <- fruit_intercepts[data$fruit[i]] + 
+    fruit_slopes[data$fruit[i]]*data$X[i] + rnorm(1, 0, sigma)
+}
+data
+```
+
+```{r}
+fit <- lm(y ~ X*fruit, data = data)
+model.matrix(fit)
+summary(fit)
+anova(fit)
+car::Anova(fit)
+```
+
+- Let's talk about Type I, II, and III sums of squares.
+- Let's talk about treatment contrasts vs. sum-to-zero contrasts
+- Let's talk about centering `X`.
+- Choose some other parameter values.
+
+# Interactions between two continuous variables
+
+
+```{r}
+set.seed(103)
+sigma <- 2
+n <- 50
+X1 <- runif(n, 0, 1)
+X2 <- runif(n, 0, 1)
+Y <- 10 + 0.3 * X1 + 0.7 * X2 - 3 * (X1*X2) + rnorm(n, 0, sigma)
+data <- data.frame(X1 = X1, X2 = X2, Y = Y)
+```
+
+```{r}
+fit <- lm(Y ~ X1*X2, data = data)
+summary(fit)
+```
+
+- Let's talk about centering `X1` and `X2`.
+
+# Collinearity and confounding
+
+Collinearity and confounding both involve *correlated* explanatory variables.
+
+We'll simulate with the multivariate normal.
+
+```{r}
+set.seed(104)
+n <- 200
+library(mvtnorm)
+vcov <- matrix(c(1.5, .75,
+                 .75, 1.5), nrow=2, byrow=TRUE)
+mu <- c(1, 3)
+X <- rmvnorm(n, mean = mu, sigma = vcov)
+X1 <- X[,1]
+X2 <- X[,2]
+plot(X1, X2)
+cor(X)
+```
+
+```{r}
+set.seed(105)
+sigma <- 2
+Y <- 10 + 0.3 * X1 + 0.7 * X2 + rnorm(n, 0, sigma)
+data <- data.frame(X1 = X1, X2 = X2, Y = Y)
+```
+
+- Let's look at model fits with both or only one of the `X`s.
+- Look at parameter estimates, standard errors, and P-values.
+
+# Number of estimated parameters
+
+- Let's see what happens when we estimate more and more parameters.
+
+# Bias-variance tradeoffs
+
+- Is it ever better to ignore some variables?
