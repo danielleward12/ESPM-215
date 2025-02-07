@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Heriarchical Statistics Notes class 2"
 format: html
 editor: visual
 ---
