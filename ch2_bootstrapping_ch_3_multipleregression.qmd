@@ -5,10 +5,14 @@ editor: visual
 ---
 
 assumptions need to met for the linear regression
+- linear relationship
+- independence of residuals
+- homoskedastic
+- normally distributed residuals
 
 least squares regression is used to estimate parameters
 
-estimation and inference
+estimation vs inference are two important, but different concepts
 
 estimation is how we'll get estimates of the parameters of the model
 (parametric statistics vs. non parametric statistics)

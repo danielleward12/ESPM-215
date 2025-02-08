@@ -16,6 +16,8 @@ sampling distribution is the distribution of parameter estimates across multiple
 
 The correct parameters will be in the middle of the histogram and as well as the points when the estimate of intercept is plotted against estimate of slope.
 
+aka is the distribution of sample statistics computed for different samples of the same size, from the same population (e.g. the mean of many different simulated samples)
+
 ## sampling error
 
 standard error is the standard deviation of the sampling distribution to find the true standard error you can increase the number of simulations
@@ -31,6 +33,14 @@ the average value of Y when all predictors are set equal to 0
 ## slope
 
 predicted change in Y per unit increase in X
+
+
+## notes
+
+when we look at a model summary we'll see Std. Error, t value, and Pr(>|t|) columns under the coefficients heading
+the first row (Intercept) is related to null hypothesis testing
+the second row provides a test statistic and p-value for testing whether the slope parameter is 0
+
 
 # Questions:
 
@@ -50,6 +60,15 @@ interactions = the differences between one variable depends on another variable
 
 centering continuous variables = subtracting the mean from each observation (effectively putting 0 right in the middle of the x axis so then youll be able to see y right at the mean of x and the difference you get is the difference between y right at the mean of x)
 standardizing = subtracting the mean and dividing by the standard deviation
+
+
+
+# Diagnosing residuals
+
+1. residual versus fitted value plot for linearity
+2. Q-Q plot (quantiles of the standardized residuals versus quantiles of a standard normal distribution) for noramlity 
+3. leverage (how far away each observation is in “predictor space” from the other observations) Observations with high leverage are often, but not always, highly influential points and are indicated with their row numbers) 
+4. residual versus standardized residuals also for linearity but especially for small data sets
 
 
 
